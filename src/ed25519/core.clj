@@ -1,68 +1,14 @@
 (ns ed25519.core
-  (:refer-clojure :exclude [/ bit-and range + * bit-shift-right bit-shift-left mod for]))
+  (:refer-clojure :exclude [/ bit-and range + * bit-shift-right bit-shift-left mod])
+  ;;(:require [ed25519.replacements :refer :all])
+  (:use [ed25519.replacements :exclude [for]])
+  )
 
 ;; translation of
 ;; http://ed25519.cr.yp.to/python/ed25519.py
 ;; an "an educational (but unusably slow) pure-python module"
 ;; "This implementation does not include protection against
 ;; side-channel attacks. "
-
-(defn N [n]
-  (if (number? n)
-    (.toBigInteger (bigint n))
-    `(N ~n)))
-
-(set! *data-readers*
-      (assoc *data-readers*
-        'hiredman/N #'N))
-
-(defn range [& args]
-  (map N (apply clojure.core/range args)))
-
-(defmacro for
-  "turn for+range in to an array manipulation"
-  [[name value :as binding] body]
-  (if  (and (= 2 (count binding))
-            (seq? value)
-            (= 'range (first value)))
-    (let [x (rest value)
-          [low high] (if (= 2 (count x))
-                       x
-                       [0 (first x)])]
-      `(let [c# (- ~high ~low)
-             ;; :/ Object
-             a# (make-array Number c#)]
-         (loop [i# 0]
-           (if (> c# i#)
-             (let [~name i#]
-               (aset a# i# ~body)
-               (recur (inc i#)))
-             a#))))
-    `(clojure.core/for ~binding ~body)))
-
-(defmacro pow [a b]
-  `(.pow ~(N a) ~(N b)))
-
-(defmacro + [a b]
-  `(.add ~(N a) ~(N b)))
-
-(defmacro / [a b]
-  `(.divide ~(N a) ~(N b)))
-
-(defmacro bit-and [a b]
-  `(.and ~(N a) ~(N b)))
-
-(defmacro * [a b]
-  `(.multiply ~(N a) ~(N b)))
-
-(defmacro bit-shift-left [a b]
-  `(.shiftLeft ~(N a) ~(N b)))
-
-(defmacro bit-shift-right [a b]
-  `(.shiftRight ~(N a) ~(N b)))
-
-(defmacro mod [a b]
-  `(.mod ~(N a) ~(N b)))
 
 (defn sum [ns]
   (loop [i (N 0)
@@ -72,21 +18,18 @@
       (recur (inc i)
              (+ s (nth ns i))))))
 
+(defmacro pow [a b]
+  `(.pow ~(N a) ~(N b)))
+
 (def b 256)
 (def q (- (pow 2 255) 19))
 (def l (+ (pow 2 252) 27742317777372353535851937790883648493))
 
-;;,(byte (.intValue (bit-xor (long 211) 0xfffffffffffff00))))
-
 (defn byte->long [b]
-  (long (bit-and (long (+ 128 b)) 0xff)))
+  (bit-and (long b) 0xff))
 
 (defn long->byte [l]
-  (try
-    (byte (- l 128))
-    (catch Exception e
-      (println l)
-      (throw e))))
+  (.byteValue (long l)))
 
 (defn longs->bytes [longs]
   #_{:pre [(instance? (Class/forName "[J") longs)]}
@@ -103,10 +46,9 @@
 
 (defn H
   [m]
-  #_{:pre [(instance? (Class/forName "[J") m)]}
-  (let [md (java.security.MessageDigest/getInstance "SHA-512")
-        l (longs->bytes m)]
-    (.update md l)
+  {:pre [(instance? java.lang.Number (nth m 0))]}
+  (let [md (java.security.MessageDigest/getInstance "SHA-512")]
+    (.update md (longs->bytes m))
     (let [x (.digest md)]
       (bytes->longs x))))
 
@@ -205,27 +147,34 @@
            (* (pow 2 i)
               (bit h i))))))
 
-(defn signature [m sk pk]
+(defn signature [m sk′ pk]
   (let [m (bytes->longs m)
-        sk (bytes->longs sk)
+        sk (bytes->longs sk′)
         pk (bytes->longs pk)
-        h (H sk)
+        h (H sk′)
+        _ (println "h")
+        _ (println (vec h))
         a (+ (pow 2 (- b 2))
              (sum (for [i (range 3 (- b 2))]
                     (* (pow 2 i)
                        (bit h i)))))
-        r (Hint (concat (for [i (range (/ b 8)
-                                       (/ b 4))]
-                          (nth h i))
-                        m))
+        x (for [i (range (/ b 8) (/ b 4))]
+            (nth h i))
+        _ (println "x")
+        _ (println (vec x))
+        r (Hint (concat x m))
+        _ (println "r")
+        _ (println r)
         R (scalarmult B r)
+        _ (println "R")
+        _ (println R)
         o (Hint (concat (encodepoint R) pk m))
         S (mod (+ r (* o a)) l)
-        sig (concat (encodepoint R)
-                    (encodeint S))]
-    ;; (println "signature")
-    ;; (println (vec sig))
-    (longs->bytes sig)))
+        l (concat (encodepoint R)
+                  (encodeint S))]
+    (println "signature")
+    (println (vec l))
+    (longs->bytes l)))
 
 (defn isoncurve [P]
   (let [[x y] P]

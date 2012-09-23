@@ -23,14 +23,17 @@
           [low high] (if (= 2 (count x))
                        x
                        [0 (first x)])]
-      `(let [c# (- ~high ~low)
-             ;; :/ Object
+      `(let [h# ~high
+             l# ~low
+             c# (- h# l#)
              a# (make-array Number c#)]
-         (loop [i# 0]
-           (if (> c# i#)
-             (let [~name i#]
-               (aset a# i# ~body)
-               (recur (inc i#)))
+         (loop [array-index# 0
+                n# l#]
+           (if (> c# array-index#)
+             (let [~name n#]
+               (aset a# array-index# ~body)
+               (recur (inc array-index#)
+                      (inc n#)))
              a#))))
     `(clojure.core/for ~binding ~body)))
 

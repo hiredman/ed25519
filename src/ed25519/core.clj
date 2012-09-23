@@ -1,8 +1,6 @@
 (ns ed25519.core
-  (:refer-clojure :exclude [/ bit-and range + * bit-shift-right bit-shift-left mod])
-  ;;(:require [ed25519.replacements :refer :all])
-  (:use [ed25519.replacements :exclude [for]])
-  )
+  (:refer-clojure :exclude [/ bit-and range + * bit-shift-right bit-shift-left mod for])
+  (:require [ed25519.replacements :refer :all]))
 
 ;; translation of
 ;; http://ed25519.cr.yp.to/python/ed25519.py
@@ -152,28 +150,18 @@
         sk (bytes->longs sk′)
         pk (bytes->longs pk)
         h (H sk′)
-        _ (println "h")
-        _ (println (vec h))
         a (+ (pow 2 (- b 2))
              (sum (for [i (range 3 (- b 2))]
                     (* (pow 2 i)
                        (bit h i)))))
         x (for [i (range (/ b 8) (/ b 4))]
             (nth h i))
-        _ (println "x")
-        _ (println (vec x))
         r (Hint (concat x m))
-        _ (println "r")
-        _ (println r)
         R (scalarmult B r)
-        _ (println "R")
-        _ (println R)
         o (Hint (concat (encodepoint R) pk m))
         S (mod (+ r (* o a)) l)
         l (concat (encodepoint R)
                   (encodeint S))]
-    (println "signature")
-    (println (vec l))
     (longs->bytes l)))
 
 (defn isoncurve [P]

@@ -1,12 +1,11 @@
 (ns ed25519.core
-  (:refer-clojure :exclude [/ bit-and range + * bit-shift-right bit-shift-left mod]))
+  (:refer-clojure :exclude [/ bit-and range + * bit-shift-right bit-shift-left mod for]))
 
 ;; translation of
 ;; http://ed25519.cr.yp.to/python/ed25519.py
 ;; an "an educational (but unusably slow) pure-python module"
 ;; "This implementation does not include protection against
 ;; side-channel attacks. "
-
 
 (defn N [n]
   (if (number? n)
@@ -19,6 +18,27 @@
 
 (defn range [& args]
   (map N (apply clojure.core/range args)))
+
+(defmacro for
+  "turn for+range in to an array manipulation"
+  [[name value :as binding] body]
+  (if  (and (= 2 (count binding))
+            (seq? value)
+            (= 'range (first value)))
+    (let [x (rest value)
+          [low high] (if (= 2 (count x))
+                       x
+                       [0 (first x)])]
+      `(let [c# (- ~high ~low)
+             ;; :/ Object
+             a# (make-array Number c#)]
+         (loop [i# 0]
+           (if (> c# i#)
+             (let [~name i#]
+               (aset a# i# ~body)
+               (recur (inc i#)))
+             a#))))
+    `(clojure.core/for ~binding ~body)))
 
 (defmacro pow [a b]
   `(.pow ~(N a) ~(N b)))
@@ -62,7 +82,11 @@
   (long (bit-and (long (+ 128 b)) 0xff)))
 
 (defn long->byte [l]
-  (byte (- l 128)))
+  (try
+    (byte (- l 128))
+    (catch Exception e
+      (println l)
+      (throw e))))
 
 (defn longs->bytes [longs]
   #_{:pre [(instance? (Class/forName "[J") longs)]}
@@ -196,10 +220,12 @@
                         m))
         R (scalarmult B r)
         o (Hint (concat (encodepoint R) pk m))
-        S (mod (+ r (* o a)) l)]
-    (longs->bytes
-     (concat (encodepoint R)
-             (encodeint S)))))
+        S (mod (+ r (* o a)) l)
+        sig (concat (encodepoint R)
+                    (encodeint S))]
+    ;; (println "signature")
+    ;; (println (vec sig))
+    (longs->bytes sig)))
 
 (defn isoncurve [P]
   (let [[x y] P]

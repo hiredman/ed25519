@@ -22,12 +22,15 @@
 (deftest check-test
   ;;http://ed25519.cr.yp.to/python/sign.py
   (with-open [r (io/reader (io/resource "sign.input"))]
-    (doseq [l (line-seq r)
+    (doseq [[idx l] (map-indexed vector (line-seq r))
             :let [x (vec (.split l ":"))
                   sk (Hex/decodeHex (.toCharArray (subs (x 0) 0 64)))
                   pk (ed/publickey sk)
                   m (Hex/decodeHex (.toCharArray (x 2)))
                   s (ed/signature m sk pk)]]
+      (println idx)
+      (println (Hex/encodeHexString
+                (into-array Byte/TYPE s)))
       (ed/checkvalid s m pk)
       (let [forged-m (ed/bytes->longs
                       (if (zero? (count m))
@@ -48,4 +51,5 @@
         (is (= (get x 1) (Hex/encodeHexString pk)))
         (is (= (get x 3) (Hex/encodeHexString
                           (into-array Byte/TYPE
-                                      (concat s m)))))))))
+                                      (concat s m)))))
+        (System/exit 0)))))

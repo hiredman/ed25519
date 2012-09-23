@@ -4,16 +4,11 @@
             [clojure.java.io :as io])
   (:import (org.apache.commons.codec.binary Hex)))
 
-(defn bytes->longs [bytes]
-  (into-array Long/TYPE
-              (for [i bytes]
-                (bit-and (long i) 0xff))))
-
 (deftest check-params
   ;;http://ed25519.cr.yp.to/python/checkparams.py
   (is (>= ed/b 10))
   (is (= (* 2 ed/b)
-         (* 8 (count (ed/H (bytes->longs (.getBytes "hash input")))))))
+         (* 8 (count (ed/H (ed/bytes->longs (.getBytes "hash input")))))))
   (is (= 1 (ed/expmod 2 (- ed/q 1) ed/q)))
   (is (= 1 (mod ed/q 4)))
   (is (= 1 (ed/expmod 2 (- ed/l 1) ed/l)))
@@ -34,7 +29,7 @@
                   m (Hex/decodeHex (.toCharArray (x 2)))
                   s (ed/signature m sk pk)]]
       (ed/checkvalid s m pk)
-      (let [forged-m (bytes->longs
+      (let [forged-m (ed/bytes->longs
                       (if (zero? (count m))
                         (.getBytes "x")
                         (for [i (range (count m))]

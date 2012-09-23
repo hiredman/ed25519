@@ -57,24 +57,32 @@
 (def l (+ (pow 2 252) 27742317777372353535851937790883648493))
 
 ;;,(byte (.intValue (bit-xor (long 211) 0xfffffffffffff00))))
+
+(defn byte->long [b]
+  (long (bit-and (long (+ 128 b)) 0xff)))
+
+(defn long->byte [l]
+  (byte (- l 128)))
+
 (defn longs->bytes [longs]
+  #_{:pre [(instance? (Class/forName "[J") longs)]}
   (let [bs (byte-array (count longs))]
     (dotimes [i (count longs)]
-      (let [l (nth longs i)
-            b (byte (.intValue (bit-xor (long l) 0xfffffffffffff00)))]
-        (aset bs i (byte b))))
+      (let [l (nth longs i)]
+        (aset bs i (long->byte l))))
     bs))
 
 (defn bytes->longs [bytes]
   (into-array Long/TYPE
               (for [i bytes]
-                (long (bit-and (long i) 0xff)))))
+                (long (byte->long i)))))
 
 (defn H
   [m]
-  {:pre [(instance? (Class/forName "[J") m)]}
-  (let [md (java.security.MessageDigest/getInstance "SHA-512")]
-    (.update md (longs->bytes m))
+  #_{:pre [(instance? (Class/forName "[J") m)]}
+  (let [md (java.security.MessageDigest/getInstance "SHA-512")
+        l (longs->bytes m)]
+    (.update md l)
     (let [x (.digest md)]
       (bytes->longs x))))
 
@@ -168,7 +176,7 @@
     (longs->bytes (encodepoint A))))
 
 (defn Hint [m]
-  (let [h (H (bytes->longs m))]
+  (let [h (H m)]
     (sum (for [i (range (* 2 b))]
            (* (pow 2 i)
               (bit h i))))))

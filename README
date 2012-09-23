@@ -1,0 +1,17 @@
+# ed25519
+
+this is a port of http://ed25519.cr.yp.to/python/ed25519.py to clojure
+
+ed25519 is an eliptic curve signature algorithm and it can be pretty fast.
+
+this library is most likely pretty slow
+
+## Usage
+
+??
+
+## License
+
+Copyright (C) 2012 Kevin Downey
+
+Distributed under the Eclipse Public License, the same as Clojure.

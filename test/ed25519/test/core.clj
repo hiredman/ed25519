@@ -30,8 +30,9 @@
       (let [high-c (nth hex i)
             low-c (nth hex (inc i))]
         (recur (conj result
-                     (+ (bit-shift-left (get hex-digit-map high-c) 4)
-                        (get hex-digit-map low-c)))
+                     (ed/long->byte
+                      (+ (bit-shift-left (get hex-digit-map high-c) 4)
+                         (get hex-digit-map low-c))))
                (inc (inc i))))
       result)))
 
@@ -59,33 +60,33 @@
 (defn check-line [l]
   (time
    (let [x (vec (.split l ":"))
-         sk (hex-decode (subs (x 0) 0 64))
-         pk (ed/publickey sk)
-         m (hex-decode (x 2))
-         s (ed/signature m sk pk)]
-     ;; (println (BigInteger.
-     ;;           (ed/longs->bytes sk)))
-     ;; (println
-     ;;  (.encode (sun.misc.BASE64Encoder.)
-     ;;           (f (into-array Byte/TYPE s))))
-     (ed/checkvalid s m pk)
-     (let [forged-m (ed/bytes->longs
-                     (if (zero? (count m))
-                       (.getBytes "x")
-                       (for [i (range (count m))]
-                         (.byteValue (+ (nth m i)
-                                        (if (= i (dec (count m)))
-                                          1
-                                          0))))))]
-       (is (try
-             (ed/checkvalid s forged-m pk)
-             false
-             (catch Exception _
-               true)))
-       (let [[a b _ d] x]
-         (is (= a (hex-encode (concat sk pk))))
-         (is (= b (hex-encode pk)))
-         (is (= d (hex-encode (concat s m)))))))))
+         sk (hex-decode (subs (x 0) 0 64))]
+     (let [pk (ed/publickey sk)
+           m (hex-decode (x 2))
+           s (ed/signature m sk pk)]
+       ;; (println (BigInteger.
+       ;;           (ed/longs->bytes sk)))
+       ;; (println
+       ;;  (.encode (sun.misc.BASE64Encoder.)
+       ;;           (f (into-array Byte/TYPE s))))
+       (ed/checkvalid s m pk)
+       (let [forged-m (ed/bytes->longs
+                       (if (zero? (count m))
+                         (.getBytes "x")
+                         (for [i (range (count m))]
+                           (.byteValue (+ (nth m i)
+                                          (if (= i (dec (count m)))
+                                            1
+                                            0))))))]
+         (is (try
+               (ed/checkvalid s forged-m pk)
+               false
+               (catch Exception _
+                 true)))
+         (let [[a b _ d] x]
+           (is (= a (hex-encode (concat sk pk))))
+           (is (= b (hex-encode pk)))
+           (is (= d (hex-encode (concat s m))))))))))
 
 (deftest ^:regression check-test
   ;;http://ed25519.cr.yp.to/python/sign.py
@@ -99,6 +100,10 @@
     (let [ls (vec (line-seq r))]
       (doseq [l (take 5 (repeatedly #(rand-nth ls)))]
         (check-line l)))))
+
+(deftest test-first-line
+  (with-open [r (io/reader (io/resource "sign.input"))]
+    (check-line (first (line-seq r)))))
 
 (deftest t-for
   (are [x y] (and (= (vec x) (vec y))

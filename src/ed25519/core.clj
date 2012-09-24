@@ -144,10 +144,11 @@
            (* (pow 2 i)
               (bit h i))))))
 
-(defn signature [m sk′ pk]
+(defn signature [m sk pk]
   (let [m (bytes->longs m)
         pk (bytes->longs pk)
-        h (H sk′)
+        sk (bytes->longs sk)
+        h (H sk)
         a (+ (pow 2 (- b 2))
              (sum (for [i (range 3 (- b 2))]
                     (* (pow 2 i)

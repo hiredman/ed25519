@@ -1,5 +1,6 @@
 (ns ed25519.replacements
-  (:refer-clojure :exclude [/ bit-and range + * bit-shift-right bit-shift-left mod for]))
+  (:refer-clojure :exclude [/ bit-and range + * bit-shift-right bit-shift-left
+                            mod for concat]))
 
 (set! *warn-on-reflection* true)
 
@@ -71,3 +72,25 @@
 
 (defmacro error [s]
   `(throw (Exception. ~s)))
+
+(defmacro gen-concat [& args]
+  (let [arr (gensym 'arr)]
+    `(let [size# ~(conj (for [x args] `(count ~x)) 'clojure.core/+)
+           ~arr (make-array Object size#)
+           ~'a-i 0
+           ~@(for [a args
+                   x ['a-i `(loop [a-i# 0
+                                   arr-i# ~'a-i]
+                              (if (> (count ~a) a-i#)
+                                (do
+                                  (aset ~arr arr-i# (aget ~a a-i#))
+                                  (recur (inc a-i#) (inc arr-i#)))
+                                arr-i#))]]
+               x)]
+       ~arr)))
+
+(defn concat
+  ([a b]
+     (gen-concat a b))
+  ([a b c]
+     (gen-concat a b c)))

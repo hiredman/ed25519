@@ -1,6 +1,6 @@
 (ns ed25519.core
   (:refer-clojure :exclude [/ bit-and + * bit-shift-right bit-shift-left mod
-                            for])
+                            for concat])
   (:require [ed25519.replacements :refer :all]))
 
 (set! *warn-on-reflection* true)

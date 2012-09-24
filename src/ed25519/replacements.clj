@@ -67,7 +67,9 @@
   (loop [result 1N
          b b]
     (if (zero? b)
-      result
+      (if (.bipart result)
+        result
+        (.lpart result))
       (recur (* result a) (dec b)))))
 
 (defmacro error [s]

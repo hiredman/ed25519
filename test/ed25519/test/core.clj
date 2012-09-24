@@ -50,6 +50,12 @@
   (is (ed/isoncurve ed/B))
   (is (= (ed/scalarmult ed/B ed/l) [0 1])))
 
+(defn f [bytes]
+  (let [baos (java.io.ByteArrayOutputStream.)]
+    (with-open [o (java.util.zip.DeflaterOutputStream. baos)]
+      (.write o bytes))
+    (.toByteArray baos)))
+
 (deftest check-test
   ;;http://ed25519.cr.yp.to/python/sign.py
   ;; on my macbook pro this takes about 12 seconds per line
@@ -61,6 +67,11 @@
              pk (ed/publickey sk)
              m (hex-decode (x 2))
              s (ed/signature m sk pk)]
+         ;; (println (BigInteger.
+         ;;           (ed/longs->bytes sk)))
+         ;; (println
+         ;;  (.encode (sun.misc.BASE64Encoder.)
+         ;;           (f (into-array Byte/TYPE s))))
          (ed/checkvalid s m pk)
          (let [forged-m (ed/bytes->longs
                          (if (zero? (count m))

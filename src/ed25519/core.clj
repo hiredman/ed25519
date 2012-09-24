@@ -11,15 +11,12 @@
 ;; side-channel attacks. "
 
 (defn sum [ns]
-  (loop [i (N 0)
-         s (N 0)]
+  (loop [i 0N
+         s 0N]
     (if (= i (count ns))
       s
       (recur (inc i)
              (+ s (nth ns i))))))
-
-(defmacro pow [a b]
-  `(.pow ~(N a) ~(N b)))
 
 (def b 256)
 (def q (- (pow 2 255) 19))
@@ -32,7 +29,6 @@
   (unchecked-byte ^Long (long l)))
 
 (defn longs->bytes [longs]
-  #_{:pre [(instance? (Class/forName "[J") longs)]}
   (let [bs (byte-array (count longs))]
     (dotimes [i (count longs)]
       (let [l (nth longs i)]

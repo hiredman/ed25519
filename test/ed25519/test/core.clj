@@ -18,7 +18,7 @@
     (dotimes [i (count bytes)]
       (let [b (nth bytes i)
             low (bit-and b 0x0f)
-            high (bit-shift-right b 4)]
+            high (bit-and (bit-shift-right b 4) 0x0f)]
         (.append buf (nth hex-digits high))
         (.append buf (nth hex-digits low))))
     (.toString buf)))

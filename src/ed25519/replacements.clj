@@ -2,8 +2,6 @@
   (:refer-clojure :exclude [/ bit-and range + * bit-shift-right bit-shift-left
                             mod for concat]))
 
-(set! *warn-on-reflection* true)
-
 (defmacro for
   "turn for+range in to an array map"
   [[name value :as binding] body]

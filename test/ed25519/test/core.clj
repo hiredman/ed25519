@@ -75,10 +75,10 @@
                  false
                  (catch Exception _
                    true)))
-           (let [[a b c] x]
+           (let [[a b _ d] x]
              (is (= a (hex-encode (concat sk pk))))
              (is (= b (hex-encode pk)))
-             (is (= c (hex-encode (concat s m)))))))))))
+             (is (= d (hex-encode (concat s m)))))))))))
 
 (deftest t-for
   (are [x y] (and (= (vec x) (vec y))

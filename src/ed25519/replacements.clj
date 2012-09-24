@@ -32,7 +32,7 @@
   `(clojure.core/+' ~a ~b))
 
 (defmacro / [a b]
-  `(bigint (clojure.core// ~a ~b)))
+  `(quot ~a ~b))
 
 (defmacro bit-op [op-name method-name & [arg]]
   (let [op (symbol "clojure.core" (name op-name))

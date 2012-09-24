@@ -1,17 +1,7 @@
 (ns ed25519.replacements
   (:refer-clojure :exclude [/ bit-and range + * bit-shift-right bit-shift-left mod for]))
 
-;; (defn ^BigInteger N [n]
-;;   (if (number? n)
-;;     (.toBigInteger (bigint n))
-;;     (with-meta `(N ~n) {:tag BigInteger})))
-
-;; (set! *data-readers*
-;;       (assoc *data-readers*
-;;         'hiredman/N #'N))
-
-;; (defn range [& args]
-;;   (map N (apply clojure.core/range args)))
+(set! *warn-on-reflection* true)
 
 (defmacro for
   "turn for+range in to an array map"
@@ -26,7 +16,7 @@
       `(let [h# ~high
              l# ~low
              c# (- h# l#)
-             a# (make-array Number c#)]
+             a# (make-array Object c#)]
          (loop [array-index# 0
                 n# l#]
            (if (> c# array-index#)
@@ -43,32 +33,26 @@
 (defmacro / [a b]
   `(bigint (clojure.core// ~a ~b)))
 
-(defn bit-and [a b]
-  (if (instance? clojure.lang.BigInt a)
-    (let [^clojure.lang.BigInt n a]
-      (if (.bipart n)
-        (clojure.lang.BigInt/fromBigInteger
-         (.and (.bipart n) (BigInteger/valueOf b)))
-        (clojure.core/bit-and (.lpart n) b)))
-    (clojure.core/bit-and a b)))
+(defmacro bit-op [op-name method-name & [arg]]
+  (let [op (symbol "clojure.core" (name op-name))
+        b (gensym 'b)]
+    `(defn ~op-name [a# ~b]
+       (if (instance? clojure.lang.BigInt a#)
+         (let [^clojure.lang.BigInt n# a#]
+           (if (.bipart n#)
+             (clojure.lang.BigInt/fromBigInteger
+              (. (.bipart n#) ~method-name
+                 ~(if arg
+                    `(~arg ~b)
+                    b)))
+             (~op (.lpart n#) ~b)))
+         (~op a# ~b)))))
 
-(defn bit-shift-left [a b]
-  (if (instance? clojure.lang.BigInt a)
-    (let [^clojure.lang.BigInt n a]
-      (if (.bipart n)
-        (clojure.lang.BigInt/fromBigInteger
-         (.shiftLeft (.bipart n) b))
-        (clojure.core/bit-shift-left (.lpart n) b)))
-    (clojure.core/bit-shift-left a b)))
+(bit-op bit-and and BigInteger/valueOf)
 
-(defn bit-shift-right [a b]
-  (if (instance? clojure.lang.BigInt a)
-    (let [^clojure.lang.BigInt n a]
-      (if (.bipart n)
-        (clojure.lang.BigInt/fromBigInteger
-         (.shiftRight (.bipart n) b))
-        (clojure.core/bit-shift-right (.lpart n) b)))
-    (clojure.core/bit-shift-right a b)))
+(bit-op bit-shift-left shiftLeft int)
+
+(bit-op bit-shift-right shiftRight int)
 
 (defmacro * [a b]
   `(clojure.core/*' ~a ~b))

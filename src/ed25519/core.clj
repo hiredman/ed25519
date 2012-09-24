@@ -2,6 +2,8 @@
   (:refer-clojure :exclude [/ bit-and range + * bit-shift-right bit-shift-left mod for])
   (:require [ed25519.replacements :refer :all]))
 
+(set! *warn-on-reflection* true)
+
 ;; translation of
 ;; http://ed25519.cr.yp.to/python/ed25519.py
 ;; an "an educational (but unusably slow) pure-python module"
@@ -27,14 +29,14 @@
   (bit-and (long b) 0xff))
 
 (defn long->byte [l]
-  (.byteValue (long l)))
+  (.byteValue ^Long (long l)))
 
 (defn longs->bytes [longs]
   #_{:pre [(instance? (Class/forName "[J") longs)]}
   (let [bs (byte-array (count longs))]
     (dotimes [i (count longs)]
       (let [l (nth longs i)]
-        (aset bs i (long->byte l))))
+        (aset bs i (byte (long->byte l)))))
     bs))
 
 (defn bytes->longs [bytes]
@@ -46,7 +48,7 @@
   [m]
   {:pre [(instance? java.lang.Number (nth m 0))]}
   (let [md (java.security.MessageDigest/getInstance "SHA-512")]
-    (.update md (longs->bytes m))
+    (.update md ^bytes (longs->bytes m))
     (let [x (.digest md)]
       (bytes->longs x))))
 

@@ -1,10 +1,10 @@
 (ns ed25519.replacements
   (:refer-clojure :exclude [/ bit-and range + * bit-shift-right bit-shift-left mod for]))
 
-(defn N [n]
+(defn ^BigInteger N [n]
   (if (number? n)
     (.toBigInteger (bigint n))
-    `(N ~n)))
+    (with-meta `(N ~n) {:tag BigInteger})))
 
 (set! *data-readers*
       (assoc *data-readers*

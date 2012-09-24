@@ -10,6 +10,11 @@ this library is most likely pretty slow
 
 ??
 
+## Other Files 
+
+resources/sign.input comes from http://ed25519.cr.yp.to/software.html
+and is used to veriy the implementation with known inputs.
+
 ## License
 
 Copyright (C) 2012 Kevin Downey

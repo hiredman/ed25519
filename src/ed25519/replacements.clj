@@ -57,3 +57,6 @@
 
 (defmacro mod [a b]
   `(.mod ~(N a) ~(N b)))
+
+(defmacro error [s]
+  `(throw (Exception. ~s)))

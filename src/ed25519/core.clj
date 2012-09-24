@@ -149,28 +149,24 @@
 
 (defn signature [m sk′ pk]
   (let [m (bytes->longs m)
-        sk (bytes->longs sk′)
         pk (bytes->longs pk)
         h (H sk′)
         a (+ (pow 2 (- b 2))
              (sum (for [i (range 3 (- b 2))]
                     (* (pow 2 i)
                        (bit h i)))))
-        x (for [i (range (/ b 8) (/ b 4))]
-            (nth h i))
-        r (Hint (concat x m))
+        r (Hint (concat (for [i (range (/ b 8) (/ b 4))]
+                          (nth h i))
+                        m))
         R (scalarmult B r)
-        o (Hint (concat (encodepoint R) pk m))
-        S (mod (+ r (* o a)) l)
-        l (concat (encodepoint R)
-                  (encodeint S))]
-    (longs->bytes l)))
+        S (mod (+ r (* (Hint (concat (encodepoint R) pk m)) a)) l)]
+    (longs->bytes
+     (concat (encodepoint R)
+             (encodeint S)))))
 
 (defn isoncurve [P]
   (let [[x y] P]
-    (zero? (mod (- (- (+ (* (- 0 x) x)
-                         (* y y))
-                      1)
+    (zero? (mod (- (- (+ (* (- 0 x) x) (* y y)) 1)
                    (* (* (* (* d x) x) y) y))
                 q))))
 
@@ -190,7 +186,7 @@
             x)
         P [x y]]
     (when-not (isoncurve P)
-      (throw (Exception. "decoding point that is not on curve")))
+      (error "decoding point that is not on curve"))
     P))
 
 (defn checkvalid [s m pk]
@@ -198,9 +194,9 @@
         m (bytes->longs m)
         pk (bytes->longs pk)]
     (when-not (= (count s) (/ b 4))
-      (throw (Exception. "signature length is wrong")))
+      (error "signature length is wrong"))
     (when-not (= (count pk) (/ b 8))
-      (throw (Exception. "public key length is wrong")))
+      (error "public key length is wrong"))
     (let [R (decodepoint (subvec (vec s) 0 (/ b 8)))
           A (decodepoint pk)
           S (decodeint (subvec (vec s)
@@ -208,8 +204,6 @@
                                (/ b 4)))
           h (Hint (concat (encodepoint R)
                           pk
-                          m))
-          t (scalarmult B S)
-          c (edwards R (scalarmult A h))]
-      (when-not (= t c)
-        (throw (Exception. "signature does not pass verification"))))))
+                          m))]
+      (when-not (= (scalarmult B S) (edwards R (scalarmult A h)))
+        (error "signature does not pass verification")))))

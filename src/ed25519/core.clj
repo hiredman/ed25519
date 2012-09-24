@@ -29,7 +29,7 @@
   (bit-and (long b) 0xff))
 
 (defn long->byte [l]
-  (.byteValue ^Long (long l)))
+  (unchecked-byte ^Long (long l)))
 
 (defn longs->bytes [longs]
   #_{:pre [(instance? (Class/forName "[J") longs)]}

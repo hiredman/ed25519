@@ -3,8 +3,6 @@
                             for concat])
   (:require [ed25519.replacements :refer :all]))
 
-(set! *warn-on-reflection* true)
-
 ;; translation of
 ;; http://ed25519.cr.yp.to/python/ed25519.py
 ;; an "an educational (but unusably slow) pure-python module"

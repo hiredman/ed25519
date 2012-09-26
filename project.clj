@@ -3,4 +3,5 @@
   :dependencies [[org.clojure/clojure "1.4.0"]]
   :test-selectors {:default (complement :regression)
                    :regression :regression
-                   :all (constantly true)})
+                   :all (constantly true)}
+  :warn-on-reflection true)

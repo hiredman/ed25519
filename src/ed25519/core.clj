@@ -1,7 +1,8 @@
 (ns ed25519.core
   (:refer-clojure :exclude [/ bit-and + * bit-shift-right bit-shift-left mod
                             for concat])
-  (:require [ed25519.replacements :refer :all]))
+  (:require [ed25519.replacements :refer :all])
+  (:import (java.security MessageDigest)))
 
 ;; translation of
 ;; http://ed25519.cr.yp.to/python/ed25519.py
@@ -126,6 +127,7 @@
   (bit-and (bit-shift-right (int (nth h (/ i 8))) (mod i 8))
            1))
 
+;; generate a public key from a secret key
 (defn publickey [sk]
   (let [sk (bytes->longs sk)
         h (H sk)
@@ -142,6 +144,8 @@
            (* (pow 2 i)
               (bit h i))))))
 
+;; this is how you sign stuff, signatures are 64 bytes, I suggest
+;; base64 encoding
 (defn signature [m sk pk]
   (let [m (bytes->longs m)
         pk (bytes->longs pk)
@@ -203,3 +207,10 @@
                           m))]
       (when-not (= (scalarmult B S) (edwards R (scalarmult A h)))
         (error "signature does not pass verification")))))
+
+;; keys are 256 bits long, so sha256 is dirty way to create a key
+(defn sha256 [seed]
+  (let [md (MessageDigest/getInstance "SHA-256")]
+    (.update md (.getBytes seed "utf8"))
+    (.digest md)))
+

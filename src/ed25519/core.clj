@@ -2,7 +2,9 @@
   (:refer-clojure :exclude [/ bit-and + * bit-shift-right bit-shift-left mod
                             for concat])
   (:require [ed25519.replacements :refer :all])
-  (:import (java.security MessageDigest)))
+  (:import (java.security MessageDigest
+                          Key)
+           (javax.crypto KeyGenerator)))
 
 ;; translation of
 ;; http://ed25519.cr.yp.to/python/ed25519.py
@@ -214,3 +216,8 @@
     (.update md (.getBytes seed "utf8"))
     (.digest md)))
 
+(defn random-key []
+  (-> (doto (KeyGenerator/getInstance "AES")
+        (.init 256))
+      ^Key (.generateKey)
+      (.getEncoded)))

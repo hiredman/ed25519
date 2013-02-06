@@ -8,7 +8,7 @@ this library is most likely pretty slow
 
 ## Usage
 
-    [ed25519 "1.1.0"]
+`[ed25519 "1.1.0"]`
 
 ```clojure
 ed25519.test.core> (ed25519.core/sha256 "foo")

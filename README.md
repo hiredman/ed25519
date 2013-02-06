@@ -8,6 +8,7 @@ this library is most likely pretty slow
 
 ## Usage
 
+```clojure
 ed25519.test.core> (ed25519.core/sha256 "foo")
 #<byte[] [B@33fa5453>
 ed25519.test.core> (ed25519.core/publickey (ed25519.core/sha256 "foo"))
@@ -26,8 +27,6 @@ ed25519.test.core> (count (ed25519.core/signature (.getBytes "foo" "utf8") sk pk
 64
 ed25519.test.core> (hex-encode (ed25519.core/signature (.getBytes "foo" "utf8") sk pk))
 "2dee64fadd2c265e5a529098defa6151fe74c414b80fcceeb777b6f619fbf077756727892cee76354acc7988fb40ccb74bfede45894fd7663af58dca69ce1e01"
-ed25519.test.core> (sun.misc.BASE64Encoder)
-; Evaluation aborted.
 ed25519.test.core> (sun.misc.BASE64Encoder.)
 #<BASE64Encoder sun.misc.BASE64Encoder@7727b3ce>
 ed25519.test.core> (def s (ed25519.core/signature (.getBytes "foo" "utf8") sk pk))
@@ -38,6 +37,7 @@ Reflection warning, NO_SOURCE_FILE:1 - call to encode can't be resolved.
 ed25519.test.core> (count *1)
 89
 ed25519.test.core> 
+```
 
 ## Other Files 
 
@@ -46,6 +46,6 @@ and is used to verify the implementation with known inputs.
 
 ## License
 
-Copyright (C) 2012 Kevin Downey
+Copyright (C) 2013 Kevin Downey
 
 Distributed under the Eclipse Public License, the same as Clojure.

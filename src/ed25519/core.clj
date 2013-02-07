@@ -1,6 +1,6 @@
 (ns ed25519.core
-  (:refer-clojure :exclude [/ bit-and + * bit-shift-right bit-shift-left mod
-                            for concat])
+  (:refer-clojure
+   :exclude [/ bit-and + * bit-shift-right bit-shift-left mod for concat])
   (:require [ed25519.replacements :refer :all])
   (:import (java.security MessageDigest
                           Key)
@@ -11,6 +11,17 @@
 ;; an "an educational (but unusably slow) pure-python module"
 ;; "This implementation does not include protection against
 ;; side-channel attacks. "
+
+;; hey, what the hell is this, why is he doing everything using arrays
+;; of longs when the interface is passing in arrays of bytes?
+;;
+;; well you see this is a translation of code from a runtime with sane
+;; byte (unsigned) values. it is a common idiom to do byte manipulation
+;; using integers because signed bytes are crazy.
+;;
+;; ok, well that would explain integers. why longs? well clojure's
+;; default "integer" type is the long, to do it with integers would
+;; require more explicit casting of numbers from longs to ints
 
 (defn sum [ns]
   (loop [i 0N
@@ -130,7 +141,11 @@
            1))
 
 ;; generate a public key from a secret key
-(defn publickey [sk]
+(defn publickey
+  "sk secret key as bytes
+  secrect keys are 256 bit values (32 bytes)
+  returns public key as bytes"
+  [sk]
   (let [sk (bytes->longs sk)
         h (H sk)
         a (+ (pow 2 (- b 2))
@@ -148,7 +163,13 @@
 
 ;; this is how you sign stuff, signatures are 64 bytes, I suggest
 ;; base64 encoding
-(defn signature [m sk pk]
+(defn signature
+  "m message
+  sk secret key
+  pk public key
+  all byte arrays
+  returns the signature as a byte array"
+  [m sk pk]
   (let [m (bytes->longs m)
         pk (bytes->longs pk)
         sk (bytes->longs sk)
@@ -191,7 +212,13 @@
       (error "decoding point that is not on curve"))
     P))
 
-(defn checkvalid [s m pk]
+(defn checkvalid
+  "s is the signature
+  m is the message
+  pk is the public key
+  all in bytes
+  throws an exception if the triple of s,m,pk is invalid"
+  [s m pk]
   (let [s (bytes->longs s)
         m (bytes->longs m)
         pk (bytes->longs pk)]

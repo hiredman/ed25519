@@ -1,9 +1,11 @@
 (ns ed25519.core
   (:refer-clojure
    :exclude [/ bit-and + * bit-shift-right bit-shift-left mod for concat])
-  (:require [ed25519.replacements :refer :all])
+  (:require [ed25519.replacements :refer :all]
+            [clojure.java.io :as io])
   (:import (java.security MessageDigest
-                          Key)
+                          Key
+                          DigestOutputStream)
            (javax.crypto KeyGenerator)))
 
 ;; translation of
@@ -248,3 +250,22 @@
         (.init 256))
       ^Key (.generateKey)
       (.getEncoded)))
+
+(def null-os
+  (proxy [java.io.OutputStream] []
+    (close [])
+    (flush [])
+    (write
+      ([_])
+      ([_ _ _]))))
+
+(defn hash-files [& fs]
+  (let [md (MessageDigest/getInstance "SHA-256")]
+    (with-open [o2 (DigestOutputStream. null-os md)]
+      (doseq [f fs
+              ^java.io.File f (sort (file-seq (io/file f)))]
+        (.write o2 (.getBytes (.getName f) "utf8"))
+        (when-not (.isDirectory f)
+          (with-open [f (io/input-stream f)]
+            (io/copy f o2)))))
+    (.digest md)))

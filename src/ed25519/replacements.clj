@@ -11,19 +11,21 @@
     (let [x (rest value)
           [low high] (if (= 2 (count x))
                        x
-                       [0 (first x)])]
+                       [0 (first x)])
+          a (with-meta (gensym 'a)
+              {:tag 'objects})]
       `(let [h# ~high
              l# ~low
              c# (- h# l#)
-             a# (make-array Object c#)]
+             ~a (make-array Object c#)]
          (loop [array-index# 0
                 n# l#]
            (if (> c# array-index#)
              (let [~name n#]
-               (aset a# array-index# ~body)
+               (aset ~a array-index# ~body)
                (recur (inc array-index#)
                       (inc n#)))
-             a#))))
+             ~a))))
     `(clojure.core/for ~binding ~body)))
 
 (defmacro + [a b]
@@ -74,7 +76,7 @@
   `(throw (Exception. ~s)))
 
 (defmacro gen-concat [& args]
-  (let [arr (gensym 'arr)]
+  (let [arr (with-meta (gensym 'arr) {:tag 'objects})]
     `(let [size# ~(conj (for [x args] `(count ~x)) 'clojure.core/+)
            ~arr (make-array Object size#)
            ~'a-i 0
@@ -83,7 +85,7 @@
                                    arr-i# ~'a-i]
                               (if (> (count ~a) a-i#)
                                 (do
-                                  (aset ~arr arr-i# (aget ~a a-i#))
+                                  (aset ~arr arr-i# (aget ~(with-meta a {:tag 'objects}) a-i#))
                                   (recur (inc a-i#) (inc arr-i#)))
                                 arr-i#))]]
                x)]

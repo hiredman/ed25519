@@ -2,6 +2,23 @@
   (:refer-clojure :exclude [/ bit-and range + * bit-shift-right bit-shift-left
                             mod for concat]))
 
+(defprotocol ASetSource
+  (do-aset [source-array source-index target-array target-index]))
+
+(extend-type (Class/forName "[J")
+  ASetSource
+  (do-aset [source-array source-index
+            target-array target-index]
+    (aset ^objects target-array (long target-index)
+          (Long/valueOf (aget ^longs source-array (long source-index))))))
+
+(extend-type (class (object-array 0))
+  ASetSource
+  (do-aset [source-array source-index
+            target-array target-index]
+    (aset ^objects target-array (long target-index)
+          (aget ^objects source-array (long source-index)))))
+
 (defmacro for
   "turn for+range in to an array map"
   [[name value :as binding] body]
@@ -11,19 +28,22 @@
     (let [x (rest value)
           [low high] (if (= 2 (count x))
                        x
-                       [0 (first x)])]
+                       [0 (first x)])
+          a (with-meta (gensym 'a)
+              {:tag 'objects})]
       `(let [h# ~high
              l# ~low
              c# (- h# l#)
-             a# (make-array Object c#)]
+             ~a (object-array c#)]
          (loop [array-index# 0
                 n# l#]
            (if (> c# array-index#)
              (let [~name n#]
-               (aset a# array-index# ~body)
+               (aset ~a array-index#
+                     (clojure.lang.RT/box ~body))
                (recur (inc array-index#)
                       (inc n#)))
-             a#))))
+             ~a))))
     `(clojure.core/for ~binding ~body)))
 
 (defmacro + [a b]
@@ -73,6 +93,7 @@
 (defmacro error [s]
   `(throw (Exception. ~s)))
 
+
 (defmacro gen-concat [& args]
   (let [arr (gensym 'arr)]
     `(let [size# ~(conj (for [x args] `(count ~x)) 'clojure.core/+)
@@ -83,7 +104,8 @@
                                    arr-i# ~'a-i]
                               (if (> (count ~a) a-i#)
                                 (do
-                                  (aset ~arr arr-i# (aget ~a a-i#))
+                                  ;; (aset ~arr arr-i# (aget ~a a-i#))
+                                  (do-aset ~a a-i# ~arr arr-i#)
                                   (recur (inc a-i#) (inc arr-i#)))
                                 arr-i#))]]
                x)]

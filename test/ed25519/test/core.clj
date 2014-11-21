@@ -20,13 +20,13 @@
   (is (ed/isoncurve ed/B))
   (is (= (ed/scalarmult ed/B ed/l) [0 1])))
 
-(defn f [bytes]
+(defn f [^bytes bytes]
   (let [baos (java.io.ByteArrayOutputStream.)]
-    (with-open [o (java.util.zip.DeflaterOutputStream. baos)]
+    (with-open [^java.io.OutputStream o (java.util.zip.DeflaterOutputStream. baos)]
       (.write o bytes))
     (.toByteArray baos)))
 
-(defn check-line [l]
+(defn check-line [^String l]
   (time
    (let [x (vec (.split l ":"))
          sk (hex-decode (subs (x 0) 0 64))]

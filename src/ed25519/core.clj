@@ -240,7 +240,7 @@
         (error "signature does not pass verification")))))
 
 ;; keys are 256 bits long, so sha256 is dirty way to create a key
-(defn sha256 [seed]
+(defn sha256 [^String seed]
   (let [md (MessageDigest/getInstance "SHA-256")]
     (.update md (.getBytes seed "utf8"))
     (.digest md)))
